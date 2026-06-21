@@ -1,0 +1,7 @@
+{
+  "venvPath": "/home/enriqueagm/Documentos/env",
+  "venv": "ml-env",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": false,
+  "reportMissingModuleSource": false,
+}
