@@ -38,7 +38,9 @@ def softmax_loss_naive(W, X, y, reg):
 
         loss -= logp[y[i]]  # negative log probability is the loss
 
-
+        dp = p.copy()
+        dp[y[i]] -= 1
+        dW += np.outer(X[i], dp)
     # normalized hinge loss plus regularization
     loss = loss / num_train + reg * np.sum(W * W)
 
@@ -49,8 +51,9 @@ def softmax_loss_naive(W, X, y, reg):
     # it may be simpler to compute the derivative at the same time that the     #
     # loss is being computed. As a result you may need to modify some of the    #
     # code above to compute the gradient.                                       #
-    #############################################################################
-    pass
+    ############################################################################
+
+    dW = dW / num_train + reg* 2 * W
 
     return loss, dW
 
@@ -71,8 +74,14 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Implement a vectorized version of the softmax loss, storing the           #
     # result in loss.                                                           #
     #############################################################################
-    pass
+    N = X.shape[0]
+    scores = X @ W
+    scores -= scores.max(axis=1,keepdims =True)
 
+    exp = np.exp(scores)
+    probs = exp / exp.sum(axis = 1, keepdims= True)
+
+    loss = -np.log(probs[np.arange(N), y]).mean() + reg * np.sum(W * W)
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the gradient for the softmax            #
@@ -81,7 +90,9 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Hint: Instead of computing the gradient from scratch, it may be easier    #
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
-    #############################################################################
-    pass
+    #############################################################################   
+    dscores = probs.copy()
+    dscores[np.arange(N), y] -= 1
+    dW = X.T @ dscores / N + 2 * reg * W
 
     return loss, dW
