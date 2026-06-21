@@ -72,7 +72,7 @@ class KNearestNeighbor(object):
                 # training point, and store the result in dists[i, j]. You should   #
                 # not use a loop over dimension, nor use np.linalg.norm().          #
                 #####################################################################
-                pass
+                dists[i, j] = np.sqrt(np.sum((X[i] - self.X_train[j]) ** 2))
         return dists
 
     def compute_distances_one_loop(self, X):
