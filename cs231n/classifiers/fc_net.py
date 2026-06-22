@@ -215,7 +215,15 @@ class FullyConnectedNet(object):
         # beta2, etc. Scale parameters should be initialized to ones and shift     #
         # parameters should be initialized to zeros.                               #
         ############################################################################
+        dims = [input_dim] + hidden_dims + [num_classes]
 
+        for i in range(self.num_layers):
+            self.params[f'W{i+1}'] = np.random.randn(dims[i],dims[i+1]) * weight_scale
+            self.params[f'b{i+1}'] = np.zeros(dims[i+1])
+            if self.normalization == 'batchnorm' and i < self.num_layers - 1:
+                self.params[f'gamma{i+1}'] = np.ones(dims[i+1])
+                self.params[f'beta{i+1}'] = np.zeros(dims[i+1])
+           
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -285,7 +293,33 @@ class FullyConnectedNet(object):
         # self.bn_params[1] to the forward pass for the second batch normalization #
         # layer, etc.                                                              #
         ############################################################################
+        caches = []
+        out = X
 
+        for i in range(self.num_layers - 1):
+            W = self.params[f'W{i+1}']
+            b = self.params[f'b{i+1}']
+
+            out, fc_cache = affine_forward(out, W, b)
+
+            bn_cache = None
+            if self.normalization == 'batchnorm':
+                gamma = self.params[f'gamma{i+1}']
+                beta  = self.params[f'beta{i+1}']
+                out, bn_cache = batchnorm_forward(out, gamma, beta, self.bn_params[i])
+
+            out, relu_cache = relu_forward(out)
+
+            drop_cache = None
+            if self.use_dropout:
+                out, drop_cache = dropout_forward(out, self.dropout_param)
+
+            caches.append((fc_cache, bn_cache, relu_cache, drop_cache))
+
+        W = self.params[f'W{self.num_layers}']
+        b = self.params[f'b{self.num_layers}']
+        scores, cache = affine_forward(out, W, b)
+        caches.append((cache, None, None, None))
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
@@ -308,7 +342,36 @@ class FullyConnectedNet(object):
         # automated tests, make sure that your L2 regularization includes a factor #
         # of 0.5 to simplify the expression for the gradient.                      #
         ############################################################################
+        loss, dout = softmax_loss(scores, y)
 
+        # regularización L2 sobre todos los pesos (no sobre gamma/beta)
+        for i in range(self.num_layers):
+            W = self.params[f'W{i+1}']
+            loss += 0.5 * self.reg * np.sum(W ** 2)
+
+        # backward — última capa (solo affine)
+        fc_cache, _, _, _ = caches[self.num_layers - 1]
+        dout, dw, db = affine_backward(dout, fc_cache)
+        grads[f'W{self.num_layers}'] = dw + self.reg * self.params[f'W{self.num_layers}']
+        grads[f'b{self.num_layers}'] = db
+
+        # backward — capas ocultas al revés
+        for i in range(self.num_layers - 2, -1, -1):
+            fc_cache, bn_cache, relu_cache, drop_cache = caches[i]
+
+            if self.use_dropout:
+                dout = dropout_backward(dout, drop_cache)
+
+            dout = relu_backward(dout, relu_cache)
+
+            if self.normalization == 'batchnorm':
+                dout, dgamma, dbeta = batchnorm_backward(dout, bn_cache)
+                grads[f'gamma{i+1}'] = dgamma
+                grads[f'beta{i+1}']  = dbeta
+
+            dout, dw, db = affine_backward(dout, fc_cache)
+            grads[f'W{i+1}'] = dw + self.reg * self.params[f'W{i+1}']
+            grads[f'b{i+1}'] = db
         ############################################################################
         #                             END OF YOUR CODE                             #
         ############################################################################
