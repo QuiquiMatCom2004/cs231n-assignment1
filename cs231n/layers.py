@@ -164,37 +164,28 @@ def batchnorm_forward(x, gamma, beta, bn_param):
     if mode == "train":
         #######################################################################
         # TODO: Implement the training-time forward pass for batch norm.      #
-        # Use minibatch statistics to compute the mean and variance, use      #
-        # these statistics to normalize the incoming data, and scale and      #
-        # shift the normalized data using gamma and beta.                     #
-        #                                                                     #
-        # You should store the output in the variable out. Any intermediates  #
-        # that you need for the backward pass should be stored in the cache   #
-        # variable.                                                           #
-        #                                                                     #
-        # You should also use your computed sample mean and variance together #
-        # with the momentum variable to update the running mean and running   #
-        # variance, storing your result in the running_mean and running_var   #
-        # variables.                                                          #
-        #                                                                     #
-        # Note that though you should be keeping track of the running         #
-        # variance, you should normalize the data based on the standard       #
-        # deviation (square root of variance) instead!                        #
-        # Referencing the original paper (https://arxiv.org/abs/1502.03167)   #
-        # might prove to be helpful.                                          #
         #######################################################################
-        pass
+        mu  = x.mean(axis=0)                        # media por feature (D,)
+        var = x.var(axis=0)                          # varianza por feature (D,)
+        x_hat = (x - mu) / np.sqrt(var + eps)       # normalizar
+        out = gamma * x_hat + beta                   # escalar y desplazar
+
+        # actualizar estadísticas exponenciales para test-time
+        running_mean = momentum * running_mean + (1 - momentum) * mu
+        running_var  = momentum * running_var  + (1 - momentum) * var
+
+        cache = (x, x_hat, mu, var, gamma, beta, eps)
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
     elif mode == "test":
         #######################################################################
         # TODO: Implement the test-time forward pass for batch normalization. #
-        # Use the running mean and variance to normalize the incoming data,   #
-        # then scale and shift the normalized data using gamma and beta.      #
-        # Store the result in the out variable.                               #
         #######################################################################
-        pass
+        # usa las estadísticas acumuladas durante train, no las del batch
+        x_hat = (x - running_mean) / np.sqrt(running_var + eps)
+        out = gamma * x_hat + beta
+        cache = (x, x_hat, None, running_var, gamma, beta, eps)
         #######################################################################
         #                          END OF YOUR CODE                           #
         #######################################################################
@@ -227,12 +218,18 @@ def batchnorm_backward(dout, cache):
     """
     dx, dgamma, dbeta = None, None, None
     ###########################################################################
-    # TODO: Implement the backward pass for batch normalization. Store the    #
-    # results in the dx, dgamma, and dbeta variables.                         #
-    # Referencing the original paper (https://arxiv.org/abs/1502.03167)       #
-    # might prove to be helpful.                                              #
+    # TODO: Implement the backward pass for batch normalization.              #
     ###########################################################################
+    x, x_hat, mu, var, gamma, beta, eps = cache
+    N = x.shape[0]
 
+    dbeta  = dout.sum(axis=0)                        # (D,)
+    dgamma = (dout * x_hat).sum(axis=0)              # (D,)
+
+    dx_hat = dout * gamma                            # (N, D)
+    dvar   = (dx_hat * (x - mu) * -0.5 * (var + eps)**-1.5).sum(axis=0)
+    dmu    = (-dx_hat / np.sqrt(var + eps)).sum(axis=0) + dvar * (-2 * (x - mu)).mean(axis=0)
+    dx     = dx_hat / np.sqrt(var + eps) + dvar * 2 * (x - mu) / N + dmu / N
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
@@ -379,9 +376,10 @@ def dropout_forward(x, dropout_param):
     if mode == "train":
         #######################################################################
         # TODO: Implement training phase forward pass for inverted dropout.   #
-        # Store the dropout mask in the mask variable.                        #
         #######################################################################
-        pass
+        # divide por p (inverted dropout) para que no haya que escalar en test
+        mask = (np.random.rand(*x.shape) < p) / p
+        out  = x * mask
         #######################################################################
         #                           END OF YOUR CODE                          #
         #######################################################################
@@ -389,7 +387,8 @@ def dropout_forward(x, dropout_param):
         #######################################################################
         # TODO: Implement the test phase forward pass for inverted dropout.   #
         #######################################################################
-        pass
+        out  = x   # sin cambios: el escalado ya se hizo en train
+        mask = None
         #######################################################################
         #                            END OF YOUR CODE                         #
         #######################################################################
@@ -416,7 +415,8 @@ def dropout_backward(dout, cache):
         #######################################################################
         # TODO: Implement training phase backward pass for inverted dropout   #
         #######################################################################
-        pass
+        # el gradiente solo pasa donde la neurona no fue dropeada
+        dx = dout * mask
         #######################################################################
         #                          END OF YOUR CODE                           #
         #######################################################################
