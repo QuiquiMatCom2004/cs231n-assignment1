@@ -112,7 +112,7 @@ def rmsprop(w, dw, config=None):
     cache = decay_rate * cache + (1 - decay_rate) * dw **2
     next_w = w-lr*dw /(np.sqrt(cache) + eps) 
 
-    config[cache] = cache 
+    config['cache'] = cache
     ###########################################################################
     #                             END OF YOUR CODE                            #
     ###########################################################################
