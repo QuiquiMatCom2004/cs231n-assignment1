@@ -1,7 +1,10 @@
 from builtins import range
 from builtins import object
+import logging
 import os
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from ..layers import *
 from ..layer_utils import *
@@ -130,22 +133,27 @@ class TwoLayerNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = self.params
-      np.save(fpath, params)
-      print(fname, "saved.")
+      save_dir = os.path.join(os.path.dirname(__file__), "../saved/")
+      os.makedirs(save_dir, exist_ok=True)
+      fpath = os.path.join(save_dir, fname)
+      np.save(fpath, self.params)
+      logger.info("%s saved.", fname)
     
     def load(self, fname):
       """Load model parameters."""
       fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
       if not os.path.exists(fpath):
-        print(fname, "not available.")
-        return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.params = params
-        print(fname, "loaded.")
-        return True
+        raise FileNotFoundError(
+            "Model file not found: %s. "
+            "Make sure the file exists in the 'saved/' directory." % fpath
+        )
+      params = np.load(fpath, allow_pickle=True).item()
+      if not isinstance(params, dict):
+        raise ValueError(
+            "Expected a dictionary of parameters in '%s', got %s." % (fname, type(params).__name__)
+        )
+      self.params = params
+      logger.info("%s loaded.", fname)
 
 
 
@@ -381,19 +389,24 @@ class FullyConnectedNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = self.params
-      np.save(fpath, params)
-      print(fname, "saved.")
+      save_dir = os.path.join(os.path.dirname(__file__), "../saved/")
+      os.makedirs(save_dir, exist_ok=True)
+      fpath = os.path.join(save_dir, fname)
+      np.save(fpath, self.params)
+      logger.info("%s saved.", fname)
     
     def load(self, fname):
       """Load model parameters."""
       fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
       if not os.path.exists(fpath):
-        print(fname, "not available.")
-        return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.params = params
-        print(fname, "loaded.")
-        return True
+        raise FileNotFoundError(
+            "Model file not found: %s. "
+            "Make sure the file exists in the 'saved/' directory." % fpath
+        )
+      params = np.load(fpath, allow_pickle=True).item()
+      if not isinstance(params, dict):
+        raise ValueError(
+            "Expected a dictionary of parameters in '%s', got %s." % (fname, type(params).__name__)
+        )
+      self.params = params
+      logger.info("%s loaded.", fname)

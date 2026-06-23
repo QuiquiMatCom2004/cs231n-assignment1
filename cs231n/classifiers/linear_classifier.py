@@ -1,8 +1,11 @@
 from __future__ import print_function
 
+import logging
 import os
 import numpy as np
 from ..classifiers.softmax import *
+
+logger = logging.getLogger(__name__)
 
 
 class LinearClassifier(object):
@@ -119,26 +122,33 @@ class LinearClassifier(object):
         - loss as a single float
         - gradient with respect to self.W; an array of the same shape as W
         """
-        pass
+        raise NotImplementedError(
+            "Subclasses must implement loss(). Use LinearSVM or Softmax instead."
+        )
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = {"W": self.W}
-      np.save(fpath, params)
-      print(fname, "saved.")
+      save_dir = os.path.join(os.path.dirname(__file__), "../saved/")
+      os.makedirs(save_dir, exist_ok=True)
+      fpath = os.path.join(save_dir, fname)
+      np.save(fpath, {"W": self.W})
+      logger.info("%s saved.", fname)
     
     def load(self, fname):
       """Load model parameters."""
       fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
       if not os.path.exists(fpath):
-        print(fname, "not available.")
-        return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.W = params["W"]
-        print(fname, "loaded.")
-        return True
+        raise FileNotFoundError(
+            "Model file not found: %s. "
+            "Make sure the file exists in the 'saved/' directory." % fpath
+        )
+      params = np.load(fpath, allow_pickle=True).item()
+      if not isinstance(params, dict) or "W" not in params:
+        raise ValueError(
+            "Invalid model file '%s': expected a dict with key 'W'." % fname
+        )
+      self.W = params["W"]
+      logger.info("%s loaded.", fname)
 
 
 class LinearSVM(LinearClassifier):
