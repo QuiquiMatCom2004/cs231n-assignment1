@@ -130,21 +130,23 @@ class TwoLayerNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
+      safe_fname = os.path.basename(fname)
+      fpath = os.path.join(os.path.dirname(__file__), "../saved/", safe_fname)
       params = self.params
       np.save(fpath, params)
-      print(fname, "saved.")
+      print(safe_fname, "saved.")
     
     def load(self, fname):
       """Load model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
+      safe_fname = os.path.basename(fname)
+      fpath = os.path.join(os.path.dirname(__file__), "../saved/", safe_fname)
       if not os.path.exists(fpath):
-        print(fname, "not available.")
+        print(safe_fname, "not available.")
         return False
       else:
         params = np.load(fpath, allow_pickle=True).item()
         self.params = params
-        print(fname, "loaded.")
+        print(safe_fname, "loaded.")
         return True
 
 
@@ -381,19 +383,21 @@ class FullyConnectedNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
+      safe_fname = os.path.basename(fname)
+      fpath = os.path.join(os.path.dirname(__file__), "../saved/", safe_fname)
       params = self.params
       np.save(fpath, params)
-      print(fname, "saved.")
+      print(safe_fname, "saved.")
     
     def load(self, fname):
       """Load model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
+      safe_fname = os.path.basename(fname)
+      fpath = os.path.join(os.path.dirname(__file__), "../saved/", safe_fname)
       if not os.path.exists(fpath):
-        print(fname, "not available.")
+        print(safe_fname, "not available.")
         return False
       else:
         params = np.load(fpath, allow_pickle=True).item()
         self.params = params
-        print(fname, "loaded.")
+        print(safe_fname, "loaded.")
         return True
