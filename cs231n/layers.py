@@ -1,8 +1,7 @@
 from builtins import range
-from re import X
 import numpy as np
 
-# import numexpr as ne # ~~DELETE LINE~~
+from .utils import compute_softmax_probs
 
 
 def affine_forward(x, w, b):
@@ -721,9 +720,7 @@ def softmax_loss(x, y):
     # TODO: Copy over your solution from A1.
     ###########################################################################
     N = x.shape[0]
-    shifted = x - x.max(axis=1, keepdims=True)
-    exp = np.exp(shifted)
-    probs = exp / exp.sum(axis=1, keepdims=True)
+    probs = compute_softmax_probs(x)
 
     loss = -np.log(probs[np.arange(N), y]).mean()
 

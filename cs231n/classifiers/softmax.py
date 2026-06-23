@@ -1,6 +1,8 @@
 import numpy as np
 from random import shuffle
 
+from ..layers import softmax_loss
+
 
 def softmax_loss_naive(W, X, y, reg):
     """
@@ -74,14 +76,9 @@ def softmax_loss_vectorized(W, X, y, reg):
     # Implement a vectorized version of the softmax loss, storing the           #
     # result in loss.                                                           #
     #############################################################################
-    N = X.shape[0]
     scores = X @ W
-    scores -= scores.max(axis=1,keepdims =True)
-
-    exp = np.exp(scores)
-    probs = exp / exp.sum(axis = 1, keepdims= True)
-
-    loss = -np.log(probs[np.arange(N), y]).mean() + reg * np.sum(W * W)
+    data_loss, dscores = softmax_loss(scores, y)
+    loss = data_loss + reg * np.sum(W * W)
     #############################################################################
     # TODO:                                                                     #
     # Implement a vectorized version of the gradient for the softmax            #
@@ -91,8 +88,6 @@ def softmax_loss_vectorized(W, X, y, reg):
     # to reuse some of the intermediate values that you used to compute the     #
     # loss.                                                                     #
     #############################################################################   
-    dscores = probs.copy()
-    dscores[np.arange(N), y] -= 1
-    dW = X.T @ dscores / N + 2 * reg * W
+    dW = X.T @ dscores + 2 * reg * W
 
     return loss, dW

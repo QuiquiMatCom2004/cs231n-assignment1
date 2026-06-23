@@ -1,8 +1,8 @@
 from __future__ import print_function
 
-import os
 import numpy as np
 from ..classifiers.softmax import *
+from ..utils import save_params, load_params
 
 
 class LinearClassifier(object):
@@ -123,22 +123,15 @@ class LinearClassifier(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = {"W": self.W}
-      np.save(fpath, params)
-      print(fname, "saved.")
-    
+      save_params(fname, {"W": self.W})
+
     def load(self, fname):
       """Load model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      if not os.path.exists(fpath):
-        print(fname, "not available.")
+      params = load_params(fname)
+      if params is None:
         return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.W = params["W"]
-        print(fname, "loaded.")
-        return True
+      self.W = params["W"]
+      return True
 
 
 class LinearSVM(LinearClassifier):
