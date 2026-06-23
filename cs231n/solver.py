@@ -1,10 +1,13 @@
 from __future__ import print_function, division
+import logging
 import os
 import pickle as pickle
 
 import numpy as np
 
 from cs231n import optim
+
+logger = logging.getLogger(__name__)
 
 
 class Solver(object):
@@ -203,8 +206,15 @@ class Solver(object):
         filename = "%s_epoch_%d.pkl" % (self.checkpoint_name, self.epoch)
         if self.verbose:
             print('Saving checkpoint to "%s"' % filename)
-        with open(filename, "wb") as f:
-            pickle.dump(checkpoint, f)
+        try:
+            with open(filename, "wb") as f:
+                pickle.dump(checkpoint, f)
+        except OSError as e:
+            logger.warning(
+                "Failed to save checkpoint to '%s': %s. Training will continue.",
+                filename,
+                e,
+            )
 
     def check_accuracy(self, X, y, num_samples=None, batch_size=100):
         """

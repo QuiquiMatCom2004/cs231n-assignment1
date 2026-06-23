@@ -1,9 +1,12 @@
 from __future__ import print_function
 
+import logging
 import pickle
 import numpy as np
 import os
 from PIL import Image as _PILImage
+
+logger = logging.getLogger(__name__)
 
 def imread(path):
     import numpy as np
@@ -22,8 +25,17 @@ def load_pickle(f):
 
 def load_CIFAR_batch(filename):
     """ load single batch of cifar """
+    if not os.path.isfile(filename):
+        raise FileNotFoundError(
+            "CIFAR batch file not found: %s. "
+            "Make sure you have downloaded the CIFAR-10 dataset." % filename
+        )
     with open(filename, "rb") as f:
         datadict = load_pickle(f)
+        if "data" not in datadict or "labels" not in datadict:
+            raise KeyError(
+                "CIFAR batch file %s is missing required keys 'data' and/or 'labels'." % filename
+            )
         X = datadict["data"]
         Y = datadict["labels"]
         X = X.reshape(10000, 3, 32, 32).transpose(0, 2, 3, 1).astype("float")
@@ -33,6 +45,11 @@ def load_CIFAR_batch(filename):
 
 def load_CIFAR10(ROOT):
     """ load all of cifar """
+    if not os.path.isdir(ROOT):
+        raise FileNotFoundError(
+            "CIFAR-10 data directory not found: %s. "
+            "Run 'cd cs231n/datasets && bash get_datasets.sh' to download the data." % ROOT
+        )
     xs = []
     ys = []
     for b in range(1, 6):
@@ -238,8 +255,19 @@ def load_models(models_dir):
         with open(os.path.join(models_dir, model_file), "rb") as f:
             try:
                 models[model_file] = load_pickle(f)["model"]
-            except pickle.UnpicklingError:
+            except (pickle.UnpicklingError, EOFError, ValueError):
                 continue
+            except KeyError:
+                logger.warning(
+                    "Skipping '%s': file is a valid pickle but has no 'model' key.",
+                    model_file,
+                )
+            except Exception:
+                logger.warning(
+                    "Skipping '%s': unexpected error while loading.",
+                    model_file,
+                    exc_info=True,
+                )
     return models
 
 
@@ -258,18 +286,20 @@ def load_imagenet_val(num=None):
         os.path.dirname(__file__), "datasets/imagenet_val_25.npz"
     )
     if not os.path.isfile(imagenet_fn):
-        print("file %s not found" % imagenet_fn)
-        print("Run the following:")
-        print("cd cs231n/datasets")
-        print("bash get_imagenet_val.sh")
-        assert False, "Need to download imagenet_val_25.npz"
+        raise FileNotFoundError(
+            "file %s not found. Run the following:\n"
+            "  cd cs231n/datasets\n"
+            "  bash get_imagenet_val.sh" % imagenet_fn
+        )
 
     # modify the default parameters of np.load
     # https://stackoverflow.com/questions/55890813/how-to-fix-object-arrays-cannot-be-loaded-when-allow-pickle-false-for-imdb-loa
     np_load_old = np.load
     np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
-    f = np.load(imagenet_fn)
-    np.load = np_load_old
+    try:
+        f = np.load(imagenet_fn)
+    finally:
+        np.load = np_load_old
     X = f["X"]
     y = f["y"]
     class_names = f["label_map"].item()
