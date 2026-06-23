@@ -1,10 +1,10 @@
 from builtins import range
 from builtins import object
-import os
 import numpy as np
 
 from ..layers import *
 from ..layer_utils import *
+from ..utils import save_params, load_params
 
 
 class TwoLayerNet(object):
@@ -130,22 +130,15 @@ class TwoLayerNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = self.params
-      np.save(fpath, params)
-      print(fname, "saved.")
-    
+      save_params(fname, self.params)
+
     def load(self, fname):
       """Load model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      if not os.path.exists(fpath):
-        print(fname, "not available.")
+      params = load_params(fname)
+      if params is None:
         return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.params = params
-        print(fname, "loaded.")
-        return True
+      self.params = params
+      return True
 
 
 
@@ -381,19 +374,12 @@ class FullyConnectedNet(object):
 
     def save(self, fname):
       """Save model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      params = self.params
-      np.save(fpath, params)
-      print(fname, "saved.")
-    
+      save_params(fname, self.params)
+
     def load(self, fname):
       """Load model parameters."""
-      fpath = os.path.join(os.path.dirname(__file__), "../saved/", fname)
-      if not os.path.exists(fpath):
-        print(fname, "not available.")
+      params = load_params(fname)
+      if params is None:
         return False
-      else:
-        params = np.load(fpath, allow_pickle=True).item()
-        self.params = params
-        print(fname, "loaded.")
-        return True
+      self.params = params
+      return True
